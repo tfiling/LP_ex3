@@ -191,8 +191,25 @@ all_numbers_diff([]).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Task 4 - TODO GAL
 
+%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Utils
+
+% var_list_to_bitvector_list(Vars+, Map+, BitVectors-)
+var_list_to_bitvector_list([Var | RestVars], Map, [BitVector | RestBitVectors]) :-
+    var_to_bitvector(Var, Map, BitVector),
+    var_list_to_bitvector_list(RestVars, Map, RestBitVectors).
+
+var_list_to_bitvector_list([], _, []).
+
+% var_to_bitvector(Var+, Map+, BitVector-)
+var_to_bitvector(Var, [Var = BitVector | _], BitVector).
+
+var_to_bitvector(Var, [Var2 = _ | RestVars], BitVector) :-
+    Var \= Var2,
+    var_to_bitvector(Var, RestVars, BitVector).
 
 %%%%%%%%%%%%%%%%%%%%%%%%
+% map_solution_variables(Instance+, Map-)
 % maps each variable in Vars into binary representatin in the form of Var = [Lsbit, Bit2, Bit4, ....]
 % when decoding we will have values in the bit varialbes allowing us to assign the Var variable with number
 % the Var assignemnt will reflect in instance and therefor in the solution
@@ -203,7 +220,7 @@ map_solution_variables([Sum = Vars | Rest], Map) :-
     map_binary_variables(Vars, Map, Lengeth, []),
     map_solution_variables(Rest, Map).
 
-map_solution_variables([], []) :-
+map_solution_variables([], []).
 
 % current variable was not mapped already - map it!
 map_binary_variables([Var | RestVars], [Var = BitVector | RestMap], Lengeth, AlreadyMapped) :-
@@ -213,7 +230,7 @@ map_binary_variables([Var | RestVars], [Var = BitVector | RestMap], Lengeth, Alr
     map_binary_variables(RestVars, RestMap, Lengeth, AlreadyMapped1).
 
 % current variable was mapped already - continue to the next one
-map_binary_variables([Var | RestVars], [Var = BitVector | RestMap], Lengeth, AlreadyMapped) :-
+map_binary_variables([Var | RestVars], [Var = _ | RestMap], Lengeth, AlreadyMapped) :-
     member(Var = _, AlreadyMapped),
     map_binary_variables(RestVars, RestMap, Lengeth, AlreadyMapped).
 
@@ -221,13 +238,22 @@ map_binary_variables([Var | RestVars], [Var = BitVector | RestMap], Lengeth, Alr
 map_binary_variables([], [], _).
 
 %%%%%%%%%%%%%%%%%%%%%%%%
+% generate_all_sum_cnf(Instance+, Map+, SumCNF-)
 
+generate_all_sum_cnf([Sum = Vars | Rest], Map, SumCNF) :-
+    var_list_to_bitvector_list(Vars, Map, BitVectors),
+    sum_equals(Sum, BitVectors, CNF1),
+    generate_all_sum_cnf(Rest, Map, CNF2),
+    append(CNF1, CNF2, SumCNF).
+
+generate_all_sum_cnf([], _, []).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 
-kakuroEncode(Instance,Map,CNF):-
+kakuroEncode(Instance, Map, CNF):-
     map_solution_variables(Instance, Map),
+    generate_all_sum_cnf(Instance, Map, SumCNF),
     kakuroEncode_continued(Instance,Map,CNF-[]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%
