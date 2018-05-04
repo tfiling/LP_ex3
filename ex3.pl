@@ -49,27 +49,29 @@ zeroToMinusOne([-1|Rest], [-1|RestNew]):-
 
 fixDoubleMinus([],[]).
 fixDoubleMinus([List | RestCNF], [NewCNF | RestNewCNF]):-
-    fixDoubleMinusH(List, NewCNF),
+    fixDoubleMinusH2(List, NewCNF),
     fixDoubleMinus(RestCNF, RestNewCNF).
 
-fixDoubleMinusH([], []).
-fixDoubleMinusH([- -1| CNF], [1| NewCNF]):- !,
-    fixDoubleMinusH(CNF, NewCNF).
-fixDoubleMinusH([X| CNF], [-1| NewCNF]):-
-    % \var(X),
-    X = -1, 
-    !,
-    fixDoubleMinusH(CNF, NewCNF).
-fixDoubleMinusH([- -X1| CNF], [X| NewCNF]):- !,
-    var(X1),
-    fixDoubleMinusH([X1| CNF], [X| NewCNF]),
-    fixDoubleMinusH(CNF, NewCNF).
-fixDoubleMinusH([-X| CNF], [-X| NewCNF]):- !,
-    var(X),
-    fixDoubleMinusH(CNF, NewCNF).
+fixDoubleMinusH2([H | RestCNF], [NewH | RestNewCNF]) :-
+    fixDoubleMinusH(H, NewH),
+    fixDoubleMinusH2(RestCNF, RestNewCNF).
+fixDoubleMinusH2([], []).
 
-fixDoubleMinusH([X| CNF], [X| NewCNF]):- !,
+fixDoubleMinusH(- -1, 1):- !.
+fixDoubleMinusH(- -X1, X) :-
+    nonvar(X1),
+    fixDoubleMinusH(X1, X).
+fixDoubleMinusH(-1, -1):- !.
+fixDoubleMinusH(- -X1, X):- 
+    var(X1),
+    fixDoubleMinusH(X1, X).
+fixDoubleMinusH(-X, -X):-
     var(X),
+    !.
+
+fixDoubleMinusH(X, X):-
+    var(X),
+    !,
     fixDoubleMinusH(CNF, NewCNF).
 
 /* Part A */
