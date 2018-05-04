@@ -1,7 +1,5 @@
-user:file_search_path(sat, '../satsolver').
-:- use_module(sat(satsolver)).
-/*
-
+% user:file_search_path(sat, '../satsolver').
+% :- use_module(sat(satsolver)).
 % :- use_module(naive_sat).
 /* helper funcs */
 and(A,B) :- A,B.
@@ -70,7 +68,7 @@ sum_equals(Sum,Numbers,CNF):-
     zeroToMinusOne(LastVector, FinalLastVector).
     
 
-mapVals([_],[_]).
+mapVals([],[]).
 mapVals([B|BinSumMinus], [X|LastVector]):-
     X = B,
     mapVals(BinSumMinus, LastVector).
@@ -86,6 +84,18 @@ addVectors([X,Y], CNF, [Sum1|ResList]):-
     length(X, N),
     length(Y, M),
     N > M, 
+    abs(N-M, Val),
+    length(Block, Val),
+    paddZero(Block),
+    append(Y,Block, NewY),  
+    add(X,NewY,0,Sum1, CNF1),  
+    addVectors([Sum1], CNF2, ResList),
+    append(CNF1, CNF2, CNF).
+
+addVectors([X,Y], CNF, [Sum1|ResList]):-
+    length(X, N),
+    length(Y, M),
+    N == M, 
     abs(N-M, Val),
     length(Block, Val),
     paddZero(Block),
@@ -144,7 +154,7 @@ fullAdder(I1, I2, C_in, S, C_out, CNF):-
     % and( I1, I2, A1), and( X, C_in, A2), or(A1, A2, C_out),
     
 
-   */
+   
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% part 2 - Kakuro
