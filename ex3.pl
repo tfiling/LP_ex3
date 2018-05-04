@@ -1,6 +1,6 @@
 % user:file_search_path(sat, '../satsolver').
 % :- use_module(sat(satsolver)).
-% :- use_module(naive_sat).
+:- use_module(naive_sat).
 /* helper funcs */
 and(A,B) :- A,B.
 or(A,B) :- A;B.
@@ -52,7 +52,7 @@ zeroToMinusOne([-1|Rest], [-1|RestNew]):-
 %sum_equals(+,+,-)
 sum_equals(Sum,Numbers,CNF):-
     addVectors(Numbers, CNF, ResList), !,
-    writeln(ResList),
+    %writeln('Res List is' + ResList),
     my_flatten(ResList, LastVector),
     dec2bin(Sum, BinSum),
     reverse(BinSum, NewBinSum),
@@ -64,8 +64,12 @@ sum_equals(Sum,Numbers,CNF):-
     paddZero(Block),
     append(NewBinSum,Block, BinSumFinal),
     zeroToMinusOne(BinSumFinal, BinSumMinus),
+    %writeln('CNF before'+CNF),
     mapVals(BinSumMinus, LastVector),
-    zeroToMinusOne(LastVector, FinalLastVector).
+    zeroToMinusOne(LastVector, FinalLastVector),
+    %writeln('CNF after'+CNF),
+    sat(CNF).
+    %writeln('AfterSolver' + CNF).
     
 
 mapVals([],[]).
@@ -88,19 +92,18 @@ addVectors([X,Y], CNF, [Sum1|ResList]):-
     length(Block, Val),
     paddZero(Block),
     append(Y,Block, NewY),  
-    add(X,NewY,0,Sum1, CNF1),  
+    add(X,NewY,-1,Sum1, CNF1), 
+    %writeln('Sum1 is' + Sum1),
+ 
     addVectors([Sum1], CNF2, ResList),
     append(CNF1, CNF2, CNF).
 
 addVectors([X,Y], CNF, [Sum1|ResList]):-
     length(X, N),
     length(Y, M),
-    N == M, 
-    abs(N-M, Val),
-    length(Block, Val),
-    paddZero(Block),
-    append(Y,Block, NewY),  
-    add(X,NewY,0,Sum1, CNF1),  
+    N == M,   
+    add(X,Y,-1,Sum1, CNF1),
+    %writeln('Sum1 is' + Sum1),
     addVectors([Sum1], CNF2, ResList),
     append(CNF1, CNF2, CNF).
 
@@ -112,7 +115,7 @@ addVectors([X,Y|Numbers], CNF, ResList):-
     length(Block, Val),
     paddZero(Block),
     append(Y,Block, NewY),  
-    add(X,NewY,0,Sum1, CNF1),  
+    add(X,NewY,-1,Sum1, CNF1),  
     addVectors([Sum1|Numbers], CNF2, ResList),
     append(CNF1, CNF2, CNF).
 
