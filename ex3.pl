@@ -155,10 +155,14 @@ fullAdder(I1, I2, C_in, S, C_out, CNF):-
     
 
    
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% part 2 - Kakuro
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Task 3
 
  kakuroVerify([H | Rest]) :-
     verify_assignment(H),
@@ -184,4 +188,98 @@ all_numbers_diff([X1, X2 | Rest]) :-
 all_numbers_diff([_]).
 all_numbers_diff([]).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Task 4 - TODO GAL
+
+kakuroEncode(Instance,Map,CNF):-
+    kakuroEncode_continued(Instance,Map,CNF-[]).
+
+kakuroEncode_continued(Instance,Map,[[B]|CNF1]-CNF3):-
+    map_integers_to_bit_vectors(Instance,Map),
+    orders_to_CNF(Map,B,CNF1-CNF2),            % validates that every bit vector must be as unary ordered
+    previous_tasks(Instance,Map,CNF2-CNF3).      % get the CNFs of the sum_equals and all_diff of the previous tasks    
     
+% creates the mapping that was asked in the above task	
+map_integers_to_bit_vectors([ClueSum=Block|RestInstance],Map):-
+    accumulate_bit_vectors([ClueSum=Block|RestInstance], Blocks-[]),
+    sort(Blocks, BlocksNoDuplicates),
+    map(BlocksNoDuplicates,Map).
+
+% accumulate all the blocks to one big block
+accumulate_bit_vectors([], Blocks-Blocks).
+accumulate_bit_vectors([_=Block|RestInstance], Blocks1-Blocks3):-
+    list_to_continued_list(Block, Blocks1-Blocks2),
+    accumulate_bit_vectors(RestInstance, Blocks2-Blocks3).
+
+map([],[]).
+map([Var|RestBlock],[Var=Bvs|RestMap]):-
+    length(Bvs, 8),
+    map(RestBlock,RestMap).
+    
+% gets the Cnf clauses of the bit vectors
+orders_to_cnf([],_,Cnf-Cnf).
+orders_to_cnf([_=Bv|RestMap],B,Cnf1-Cnf3):-
+    order_to_cnf(Bv,B,Cnf1-Cnf2),
+    orders_to_cnf(RestMap,B,Cnf2-Cnf3).
+    
+% gets the Cnf clauses of the bit vector
+order_to_cnf([_],_,Cnf-Cnf).
+order_to_cnf([X,Y|RestBv],B,[[B,Y],[-B,X,-Y],[B,-X,-Y]|RestCnf1]-Cnf2):-
+    order_to_cnf([Y|RestBv],B,RestCnf1-Cnf2).
+
+
+% gets the cnf of sum equals for all the blocks
+previous_tasks([],_,Cnf-Cnf).
+previous_tasks([ClueSum=Block|RestInstance],Map,Cnf1-Cnf4):-
+    get_bit_vectors_by_vars(Block,Map,Numbers),
+    sum_equals(ClueSum,Numbers,SumCnf),
+    list_to_continued_list(SumCnf,Cnf1-Cnf2),
+    all_diff(Numbers, AllDiffCnf),
+    list_to_continued_list(AllDiffCnf,Cnf2-Cnf3),
+    previous_tasks(RestInstance,Map,Cnf3-Cnf4).
+   
+% given some var, returns his bit vector from the map
+get_bit_vectors_by_vars([],_,[]).
+get_bit_vectors_by_vars([Var|RestVars],Map,[Number|RestNumbers]):-
+    get_bit_vector_by_var(Var,Map,Number),
+    get_bit_vectors_by_vars(RestVars,Map,RestNumbers).
+    
+% also adds 1 at the start so it will be completelly 
+get_bit_vector_by_var(Var1,[Var2=Bvs|_],[1|Bvs]):-
+    Var1 == Var2.
+get_bit_vector_by_var(Var1,[Var2=_|RestMap],FullBvs):-
+    Var1 \== Var2,
+    get_bit_vector_by_var(Var1, RestMap, FullBvs).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Task 5 - TODO gal
+
+/* Task 7 */
+kakuroDecode([],[]).
+kakuroDecode([Var=Bvs|RestMap],[Var=Num|RestSolution]):-
+	bit_vector_to_number([1|Bvs],Num),
+    kakuroDecode(RestMap,RestSolution).
+
+bit_vector_to_number([],0).
+bit_vector_to_number([-1|_],0).	
+bit_vector_to_number([1|RestBvs],Num):-
+	bit_vector_to_number(RestBvs,Num1),
+	Num is Num1 + 1.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Task 6 - TODO gal
+
+/* Task 8 */
+kakuroSolve(Instance, Solution):-
+	kakuroEncode(Instance,Map,Cnf),
+	sat(Cnf),
+	kakuroDecode(Map,MapSolution),
+	kakuroBuildSolution(Instance, MapSolution, Solution),
+	kakuroVerify(Solution).
+
+
+/* Tools */ % TODO - GAL
+% turns list to continued list
+list_to_continued_list([],List-List).
+list_to_continued_list([El|RestList],[El|List1]-List2):-
+    list_to_continued_list(RestList,List1-List2).
