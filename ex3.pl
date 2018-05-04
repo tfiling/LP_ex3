@@ -50,6 +50,7 @@ zeroToMinusOne([-1|Rest], [-1|RestNew]):-
 %sum_equals(+,+,-)
 sum_equals(Sum,Numbers,CNF):-
     addVectors(Numbers, CNF, ResList), !,
+    writeln(ResList),
     my_flatten(ResList, LastVector),
     dec2bin(Sum, BinSum),
     reverse(BinSum, NewBinSum),
@@ -62,8 +63,7 @@ sum_equals(Sum,Numbers,CNF):-
     append(NewBinSum,Block, BinSumFinal),
     zeroToMinusOne(BinSumFinal, BinSumMinus),
     mapVals(BinSumMinus, LastVector),
-    zeroToMinusOne(LastVector, FinalLastVector),
-    writeln('CNF IS' + CNF).
+    zeroToMinusOne(LastVector, FinalLastVector).
     
 
 mapVals([_],[_]).
