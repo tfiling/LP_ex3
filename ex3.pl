@@ -191,9 +191,46 @@ all_numbers_diff([]).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Task 4 - TODO GAL
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+% maps each variable in Vars into binary representatin in the form of Var = [Lsbit, Bit2, Bit4, ....]
+% when decoding we will have values in the bit varialbes allowing us to assign the Var variable with number
+% the Var assignemnt will reflect in instance and therefor in the solution
+
+map_solution_variables([Sum = Vars | Rest], Map) :-
+    dec2bin(Sum, BinSum),   % sum binary representation size indicates the max lengeth of each variable
+    lengeth(BinSum, Lengeth),
+    map_binary_variables(Vars, Map, Lengeth, []),
+    map_solution_variables(Rest, Map).
+
+map_solution_variables([], []) :-
+
+% current variable was not mapped already - map it!
+map_binary_variables([Var | RestVars], [Var = BitVector | RestMap], Lengeth, AlreadyMapped) :-
+    \member(Var = _, AlreadyMapped),
+    lengeth(BitVector, Lengeth),    % Length bits 
+    append([Var = BitVector], AlreadyMapped, AlreadyMapped1),
+    map_binary_variables(RestVars, RestMap, Lengeth, AlreadyMapped1).
+
+% current variable was mapped already - continue to the next one
+map_binary_variables([Var | RestVars], [Var = BitVector | RestMap], Lengeth, AlreadyMapped) :-
+    member(Var = _, AlreadyMapped),
+    map_binary_variables(RestVars, RestMap, Lengeth, AlreadyMapped).
+
+
+map_binary_variables([], [], _).
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+
 kakuroEncode(Instance,Map,CNF):-
+    map_solution_variables(Instance, Map),
     kakuroEncode_continued(Instance,Map,CNF-[]).
 
+%%%%%%%%%%%%%%%%%%%%%%%%
 kakuroEncode_continued(Instance,Map,[[B]|CNF1]-CNF3):-
     map_integers_to_bit_vectors(Instance,Map),
     orders_to_CNF(Map,B,CNF1-CNF2),            % validates that every bit vector must be as unary ordered
