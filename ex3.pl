@@ -1,4 +1,8 @@
-:- use_module(naive_sat).
+user:file_search_path(sat, '../satsolver').
+:- use_module(sat(satsolver)).
+/*
+
+% :- use_module(naive_sat).
 /* helper funcs */
 and(A,B) :- A,B.
 or(A,B) :- A;B.
@@ -140,4 +144,34 @@ fullAdder(I1, I2, C_in, S, C_out, CNF):-
     % and( I1, I2, A1), and( X, C_in, A2), or(A1, A2, C_out),
     
 
-   
+   */
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% part 2 - Kakuro
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ kakuroVerify([H | Rest]) :-
+    verify_assignment(H),
+    kakuroVerify(Rest).
+
+kakuroVerify([]).
+
+verify_assignment(Sum = Assignments) :-
+    is_sum(Sum, Assignments),
+    all_numbers_diff(Assignments).
+
+is_sum(Sum, [H | T]) :-
+    Sum1 is Sum - H,
+    is_sum(Sum1, T).
+
+is_sum(0, []).
+
+all_numbers_diff([X1, X2 | Rest]) :-
+    X1 \= X2,
+    all_numbers_diff([X1 | Rest]),
+    all_numbers_diff([X2 | Rest]).
+
+all_numbers_diff([_]).
+all_numbers_diff([]).
+
+    
