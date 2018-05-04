@@ -46,13 +46,32 @@ zeroToMinusOne([1|Rest], [1|RestNew]):-
         zeroToMinusOne(Rest, RestNew).
 zeroToMinusOne([-1|Rest], [-1|RestNew]):-
         zeroToMinusOne(Rest, RestNew).
+
+fixDoubleMinus([],[]).
+fixDoubleMinus([List|CNF], NewCNF):-
+    fixDoubleMinusH(List, NewCNF),
+    fixDoubleMinus(CNF, NewCNF).
+
+fixDoubleMinusH([], []).
+fixDoubleMinusH([- -X| CNF], [X| NewCNF]):-
+    fixDoubleMinusH(CNF, NewCNF).
+fixDoubleMinusH([-X| CNF], [-X| NewCNF]):-
+    fixDoubleMinusH(CNF, NewCNF).
+
+fixDoubleMinusH([X| CNF], [X| NewCNF]):-
+        fixDoubleMinusH(CNF, NewCNF).
+fixDoubleMinusH([- -1| CNF], [1| NewCNF]):-
+    fixDoubleMinusH(CNF, NewCNF).
+fixDoubleMinusH([-1| CNF], [-1| NewCNF]):-
+    fixDoubleMinusH(CNF, NewCNF).
+
 /* Part A */
 
 /*task 1*/
 %sum_equals(+,+,-)
 sum_equals(Sum,Numbers,CNF):-
     addVectors(Numbers, CNF, ResList), !,
-    %writeln('Res List is' + ResList),
+    writeln('Res List is' + ResList),
     my_flatten(ResList, LastVector),
     dec2bin(Sum, BinSum),
     reverse(BinSum, NewBinSum),
@@ -64,12 +83,16 @@ sum_equals(Sum,Numbers,CNF):-
     paddZero(Block),
     append(NewBinSum,Block, BinSumFinal),
     zeroToMinusOne(BinSumFinal, BinSumMinus),
-    %writeln('CNF before'+CNF),
+    writeln('CNF before'+CNF),
+    writeln(''),
     mapVals(BinSumMinus, LastVector),
     zeroToMinusOne(LastVector, FinalLastVector),
-    %writeln('CNF after'+CNF),
-    sat(CNF).
-    %writeln('AfterSolver' + CNF).
+    writeln('CNF after'+CNF),
+    writeln(''),
+    fixDoubleMinus(CNF, NewCNF),
+    writeln('NewCNF after Fixing'+NewCNF),
+    sat(CNF),
+    writeln('AfterSolver' + CNF).
     
 
 mapVals([],[]).
@@ -149,15 +172,36 @@ add([X|Xs], [Y|Ys], C, [S|Sum], CNF):-
 
 %we did in class, SUM of 2 Bits 
 %fullAdder(+,+,+,-,-, -)
-fullAdder(I1, I2, C_in, S, C_out, CNF):-
-    %calc Next C
-    CNF = [[I1,I2,C_in,-S], [I1, I2, -C_in, S], [I1,-I2,C_in,S],[I1,-I2,-C_in,-S],
-    [-S,I2,C_in,S], [-I1,I2,-C_in,-S],[-I1,-I2,C_in,-S],[-I1,-I2,-C_in,S]].
-    %xor(I1, I2, X), 
-    % and( I1, I2, A1), and( X, C_in, A2), or(A1, A2, C_out),
+% fullAdder(I1, I2, C_in, S, C_out, CNF):-
+%     %calc Next C
+%     CNF = [[I1,I2,C_in,-S], [I1, I2, -C_in, S], [I1,-I2,C_in,S],[I1,-I2,-C_in,-S],
+%     [-S,I2,C_in,S], [-I1,I2,-C_in,-S],[-I1,-I2,C_in,-S],[-I1,-I2,-C_in,S]].
+%     %xor(I1, I2, X), 
+%     % and( I1, I2, A1), and( X, C_in, A2), or(A1, A2, C_out),
     
-
-   
+fullAdder(X, Y, C, Sum, Carry, Cnf) :-
+    Cnf = [[X,Y,C,Sum,Carry],
+    [X,Y,C,Sum,-Carry],
+    [X,Y,C,-Sum,Carry],
+    [X,Y,C,-Sum,-Carry],
+    [X,Y,-C,Sum,Carry],
+    [X,Y,-C,Sum,-Carry],
+    [X,Y,-C,-Sum,-Carry],
+    [X,-Y,C,Sum,Carry],
+    [X,-Y,C,Sum,-Carry],
+    [X,-Y,C,-Sum,-Carry],
+    [X,-Y,-C,Sum,Carry],
+    [X,-Y,-C,-Sum,Carry],
+    [X,-Y,-C,-Sum,-Carry],
+    [-X,Y,C,Sum,Carry],
+    [-X,Y,C,Sum,-Carry],
+    [-X,Y,C,-Sum,-Carry],
+    [-X,Y,-C,Sum,Carry],
+    [-X,Y,-C,-Sum,-Carry],
+    [-X,-Y,C,Sum,Carry],
+    [-X,-Y,C,-Sum,-Carry],
+    [-X,-Y,-C,Sum,-Carry],
+    [-X,-Y,-C,-Sum,Carry]].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% part 2 - Kakuro
