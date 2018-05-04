@@ -42,6 +42,8 @@ zeroToMinusOne([0|Rest], [-1|RestNew]):-
         zeroToMinusOne(Rest, RestNew).
 zeroToMinusOne([1|Rest], [1|RestNew]):-
         zeroToMinusOne(Rest, RestNew).
+zeroToMinusOne([-1|Rest], [-1|RestNew]):-
+        zeroToMinusOne(Rest, RestNew).
 /* Part A */
 
 /*task 1*/
@@ -58,12 +60,11 @@ sum_equals(Sum,Numbers,CNF):-
     length(Block, Val),
     paddZero(Block),
     append(NewBinSum,Block, BinSumFinal),
-    writeln('BinSumFinal is:' + BinSumFinal),
     zeroToMinusOne(BinSumFinal, BinSumMinus),
-    writeln('BinSumMinus is:' + BinSumMinus),
     mapVals(BinSumMinus, LastVector),
-    writeln('LastVec is:' + LastVector).
-
+    zeroToMinusOne(LastVector, FinalLastVector),
+    writeln('CNF IS' + CNF).
+    
 
 mapVals([_],[_]).
 mapVals([B|BinSumMinus], [X|LastVector]):-
@@ -81,13 +82,11 @@ addVectors([X,Y], CNF, [Sum1|ResList]):-
     length(X, N),
     length(Y, M),
     N > M, 
-    writeln('Last 2 elements'),
     abs(N-M, Val),
     length(Block, Val),
     paddZero(Block),
     append(Y,Block, NewY),  
     add(X,NewY,0,Sum1, CNF1),  
-    writeln('Sum OF 2 vectors is: ' + Sum1),   
     addVectors([Sum1], CNF2, ResList),
     append(CNF1, CNF2, CNF).
 
@@ -107,7 +106,7 @@ addVectors([X,Y|Numbers], CNF, ResList):-
     length(X, N),
     length(Y, M),
     N==M,
-    add(X,Y,0,Sum1,CNF1),
+    add(X,Y,-1,Sum1,CNF1),
     addVectors([Sum1|Numbers], CNF2, ResList),
     append(CNF1, CNF2, CNF).
 
@@ -135,8 +134,10 @@ add([X|Xs], [Y|Ys], C, [S|Sum], CNF):-
 %fullAdder(+,+,+,-,-, -)
 fullAdder(I1, I2, C_in, S, C_out, CNF):-
     %calc Next C
-    xor(I1, I2, X), 
-    and( I1, I2, A1), and( X, C_in, A2), or( A1, A2, C_out),
-    CNF = [[I1,I2,C_in,-S], [I1, I2, -C_in, S], [I1,-I2,C_in,S],[I1,-I2,-C_in,-S],[-S,I2,C_in,S], [-I1,I2,-C_in,-S],[-I1,-I2,C_in,-S],[-I1,-I2,-C_in,S]].
+    CNF = [[I1,I2,C_in,-S], [I1, I2, -C_in, S], [I1,-I2,C_in,S],[I1,-I2,-C_in,-S],
+    [-S,I2,C_in,S], [-I1,I2,-C_in,-S],[-I1,-I2,C_in,-S],[-I1,-I2,-C_in,S]].
+    %xor(I1, I2, X), 
+    % and( I1, I2, A1), and( X, C_in, A2), or(A1, A2, C_out),
+    
 
    
