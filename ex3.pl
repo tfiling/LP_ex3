@@ -213,8 +213,13 @@ fullAdder(X, Y, C, Sum, Carry, Cnf) :-
     [-X,-Y,-C,-Sum,Carry]].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% part 2 - Kakuro
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Task 3
 
  kakuroVerify([H | Rest]) :-
     verify_assignment(H),
@@ -240,4 +245,105 @@ all_numbers_diff([X1, X2 | Rest]) :-
 all_numbers_diff([_]).
 all_numbers_diff([]).
 
-    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Task 4 - TODO GAL
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Utils
+
+% var_list_to_bitvector_list(Vars+, Map+, BitVectors-)
+var_list_to_bitvector_list([Var | RestVars], Map, [BitVector | RestBitVectors]) :-
+    var_to_bitvector(Var, Map, BitVector),
+    var_list_to_bitvector_list(RestVars, Map, RestBitVectors).
+
+var_list_to_bitvector_list([], _, []).
+
+% var_to_bitvector(Var+, Map+, BitVector-)
+var_to_bitvector(Var, [Var = BitVector | _], BitVector).
+
+var_to_bitvector(Var, [Var2 = _ | RestVars], BitVector) :-
+    Var \= Var2,
+    var_to_bitvector(Var, RestVars, BitVector).
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+% map_solution_variables(Instance+, Map-)
+% maps each variable in Vars into binary representatin in the form of Var = [Lsbit, Bit2, Bit4, ....]
+% when decoding we will have values in the bit varialbes allowing us to assign the Var variable with number
+% the Var assignemnt will reflect in instance and therefor in the solution
+
+map_solution_variables([Sum = Vars | Rest], Map) :-
+    dec2bin(Sum, BinSum),   % sum binary representation size indicates the max lengeth of each variable
+    lengeth(BinSum, Lengeth),
+    map_binary_variables(Vars, Map, Lengeth, []),
+    map_solution_variables(Rest, Map).
+
+map_solution_variables([], []).
+
+% current variable was not mapped already - map it!
+map_binary_variables([Var | RestVars], [Var = BitVector | RestMap], Lengeth, AlreadyMapped) :-
+    \member(Var = _, AlreadyMapped),
+    lengeth(BitVector, Lengeth),    % Length bits 
+    append([Var = BitVector], AlreadyMapped, AlreadyMapped1),
+    map_binary_variables(RestVars, RestMap, Lengeth, AlreadyMapped1).
+
+% current variable was mapped already - continue to the next one
+map_binary_variables([Var | RestVars], [Var = _ | RestMap], Lengeth, AlreadyMapped) :-
+    member(Var = _, AlreadyMapped),
+    map_binary_variables(RestVars, RestMap, Lengeth, AlreadyMapped).
+
+
+map_binary_variables([], [], _).
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+% generate_sol_correctness_cnf(Instance+, Map+, CorrectnessCNF-)
+
+generate_sol_correctness_cnf([Sum = Vars | Rest], Map, CorrectnessCNF) :-
+    var_list_to_bitvector_list(Vars, Map, BitVectors),
+    sum_equals(Sum, BitVectors, CNF1),
+    all_diff(BitVectors, CNF2),
+    generate_sol_correctness_cnf(Rest, Map, RestCNF),
+    append([CNF1, CNF2, RestCNF], CorrectnessCNF).
+
+generate_sol_correctness_cnf([], _, []).
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+
+kakuroEncode(Instance, Map, CNF):-
+    map_solution_variables(Instance, Map),
+    generate_sol_correctness_cnf(Instance, Map, CorrectnessCNF).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Task 5 - TODO 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+% bit_vector_to_int(Vector+, CurrentIncrement+, Num-)
+
+bit_vector_to_int([1 | Rest], CurrentIncrement, Num) :-
+    NextIncrement is CurrentIncrement * 2,
+    bit_vector_to_int(Rest, NextIncrement, Num1),
+    Num is CurrentIncrement + Num1.
+
+% TODO gal - handle a scenario where we have ---1(unwrapping the -s)
+bit_vector_to_int([-1 | Rest], CurrentIncrement, Num) :-
+    NextIncrement is CurrentIncrement * 2,
+    bit_vector_to_int(Rest, NextIncrement, Num).
+
+bit_vector_to_int([], _, 0).
+
+
+kakuroDecode([Var = BitVector | Rest], Solution) :-
+    bit_vector_to_int(BitVector, 1, Var),
+    kakuroDecode(Rest, Solution).
+
+kakuroDecode([], []).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Task 6 - TODO gal
+
+kakuroSolve(Instance,Solution) :-
+    kakuroEncode(Instance, Map, CNF),
+    sat(CNF),
+    kakuroDecode(Map, Solution),
+    kakuroVerify(Solution).
