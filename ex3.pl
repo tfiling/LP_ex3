@@ -1,6 +1,6 @@
-% user:file_search_path(sat, '../satsolver').
-% :- use_module(sat(satsolver)).
-:- use_module(naive_sat).
+user:file_search_path(sat, '../satsolver').
+:- use_module(sat(satsolver)).
+% :- use_module(naive_sat).
 /* helper funcs */
 and(A,B) :- A,B.
 or(A,B) :- A;B.
@@ -213,6 +213,34 @@ fullAdder(X, Y, C, Sum, Carry, Cnf) :-
     [-X,-Y,-C,-Sum,Carry]].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Task 2 - all_diff(Numbers+, CNF-)
+
+all_diff([X1, X2 | Rest], CNF) :-
+    diff(X1, X2, CNF1),
+    all_diff([X1 | Rest], CNF2),
+    all_diff([X2 | Rest], CNF3),
+    append([CNF1, CNF2, CNF3], CNF).
+
+all_diff([_], []).
+all_diff([], []).
+
+% note -    preparing to the exam we implemented this one for unary representation
+%           the below implementation based on this implementation
+diff(Xs,Ys,[[B]|CNF]):-
+    diff(B, Xs, Ys, CNF).
+
+diff(B, [X], [Y], CNF):-
+        CNF = [[-B, -X, -Y], [-B, X, Y], [B, -X, Y], [B, X, -Y]].
+
+diff(B, [X | Xs], [Y | Ys], CNF):-
+    % CNF1 = [[-B, -X, -Y, B1], [-B, X, Y, B1], [B, -X, Y], [B, X, -Y], [B, -B1]], % TODO gal - cosider using the origianl CNF
+    CNF1 = [[-B, -X, -Y, B1], [-B, X, Y, B1], [B, -X, Y], [B, X, -Y], [B, X, Y, -B1], [B, -X, -Y, -B1]],
+    diff(B1, Xs, Ys, CNF2),
+    append(CNF1, CNF2, CNF).
+
+diff(_, [], [], []).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% part 2 - Kakuro
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -258,12 +286,14 @@ var_list_to_bitvector_list([Var | RestVars], Map, [BitVector | RestBitVectors]) 
 
 var_list_to_bitvector_list([], _, []).
 
-% var_to_bitvector(Var+, Map+, BitVector-)
-var_to_bitvector(Var, [Var = BitVector | _], BitVector).
+% var_to_bitvector(Var+, Map+, BitVector-) - finds Var in Map and returns it's bitvector.
+var_to_bitvector(Var, [Var = BitVector | _], BitVector).    % found Var, stop looking
 
-var_to_bitvector(Var, [Var2 = _ | RestVars], BitVector) :-
+var_to_bitvector(Var, [Var2 = _ | RestVars], BitVector) :-  % first mapped variable is not the one we are looking for, keep looking
     Var \= Var2,
     var_to_bitvector(Var, RestVars, BitVector).
+
+% no need for halt predicate, we expect it to fail if Var is not mapped
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 % map_solution_variables(Instance+, Map-)
@@ -311,7 +341,7 @@ generate_sol_correctness_cnf([], _, []).
 
 kakuroEncode(Instance, Map, CNF):-
     map_solution_variables(Instance, Map),
-    generate_sol_correctness_cnf(Instance, Map, CorrectnessCNF).
+    generate_sol_correctness_cnf(Instance, Map, CNF).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Task 5 - TODO 
