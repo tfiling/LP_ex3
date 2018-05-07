@@ -79,9 +79,9 @@ fixDoubleMinusH(X, X):-
 /*task 1*/
 %sum_equals(+,+,-)
 sum_equals(Sum,Numbers,CNF):-
-    addVectors(Numbers, CNF, ResList), !,
-    writeln('Res List is' + ResList),
-    my_flatten(ResList, LastVector),
+    addVectors(Numbers, CNF, [LastVector]), !,   % ResList is the sum of Numbers in binary representaion, returned wrapped in list
+    writeln('Res List is' + LastVector),
+    % my_flatten(ResList, LastVector),
     dec2bin(Sum, BinSum),
     reverse(BinSum, NewBinSum),
     length(LastVector, N),
