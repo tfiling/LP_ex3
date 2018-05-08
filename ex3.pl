@@ -7,7 +7,9 @@ or(A,B) :- A;B.
 nand(A,B) :- not(and(A,B)).
 nor(A,B) :- not(or(A,B)).
 xor(A,B) :- or(A,B), nand(A,B).
-
+% TODO remove all below boolean opeartions
+% currently used to calculate the carry but probably not used properly
+% in the class the TA will explain how to calculate the carry in add(Sum, Numbers, CNF)
 or( 0, 0, 0).
 or( 0, 1, 1).
 or( 1, 0, 1).
@@ -79,24 +81,11 @@ fixDoubleMinusH(X, X):-
 /*task 1*/
 %sum_equals(+,+,-)
 sum_equals(Sum,Numbers,CNF):-
-    addVectors(Numbers, CNF, [LastVector]), !,  % ResList is the sum of Numbers in binary representaion, returned wrapped in list
-    writeln('Res List is' + LastVector),        % unwrapped the list without using myflatten
-    % my_flatten(ResList, LastVector),          % TODO gal make sure that RestList can only be bit vercor wrapped in a list
-    dec2bin(Sum, BinSum),
-    reverse(BinSum, LsbBinSum),
-    setLastVectorValues(LsbBinSum, LastVector), % TODO gal what if len(LsbBinSum) > len(LastVector)? this will mean for sure that the CNF will fail
-    writeln('LastVector = ' + LastVector),
-    zeroToMinusOne(BinSumFinal, BinSumMinus),
-    writeln('CNF before'+CNF),
-    writeln(''),
-    mapVals(BinSumMinus, LastVector),
-    zeroToMinusOne(LastVector, FinalLastVector),
-    writeln('CNF after'+CNF),
-    writeln(''),
-    fixDoubleMinus(CNF, NewCNF),
-    writeln('NewCNF after Fixing'+NewCNF),
-    sat(CNF),
-    writeln('AfterSolver' + CNF).
+    addVectors(Numbers, SumVaribles, CNF),      % SumVaribles is the variable list(bit vector) that will be set with the actual sum bits
+    dec2bin(Sum, LsbBinSum),    % converts Sum into binary Lsbit first representation
+    zeroToMinusOne(LsbBinSum, LsbBinSumMinus),  % LsbBinSumMinus is LsbBinSum where all 0s were converted to -1
+    setLastVectorValues(LsbBinSumMinus, SumVaribles).   % sets all bit variables in SumVaribles according to the values in LsbBinSumMinus
+                                                        % pads the MSbits with -1s (0s)
     
 
 mapVals([],[]).
@@ -215,7 +204,7 @@ add_binary([], [Y | Ys], Cin, [Z | Zs], CNF) :-
         [I1, I2, -C_in, S], 
         [I1,-I2,C_in,S],
         [I1,-I2,-C_in,-S],
-        [-S,I2,C_in,S], 
+        [-I1,I2,C_in,S], 
         [-I1,I2,-C_in,-S],
         [-I1,-I2,C_in,-S],
         [-I1,-I2,-C_in,S]
@@ -233,14 +222,14 @@ add_binary([], [Y | Ys], Cin, [Z | Zs], CNF) :-
     append(CNF_S, CNF_Cout, CNF).
     
 
-setLastVectorValues(LsbBinSum, LastVector) :-
-    length(LastVector, LastVectorLen),
+setLastVectorValues(LsbBinSum, SumVaribles) :-
+    length(SumVaribles, SumVariblesLen),
     length(LsbBinSum, LsbBinSumLen),
-    LastVectorLen >= LsbBinSumLen,
-    RequiredPaddingZeros is LastVectorLen - LsbBinSumLen,
+    SumVariblesLen >= LsbBinSumLen,
+    RequiredPaddingZeros is SumVariblesLen - LsbBinSumLen,
     length(PaddingBlock, RequiredPaddingZeros),
     paddZero(PaddingBlock),
-    append(LsbBinSum, PaddingBlock, LastVector).
+    append(LsbBinSum, PaddingBlock, SumVaribles).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -333,27 +322,29 @@ var_to_bitvector(Var, [Var2 = _ | RestVars], BitVector) :-  % first mapped varia
 % the Var assignemnt will reflect in instance and therefor in the solution
 
 map_solution_variables([Sum = Vars | Rest], Map) :-
-    dec2bin(Sum, BinSum),   % sum binary representation size indicates the max lengeth of each variable
-    lengeth(BinSum, Lengeth),
-    map_binary_variables(Vars, Map, Lengeth, []),
+    dec2bin(Sum, LsbBinSum),   % sum binary representation size indicates the max length of each variable
+    length(LsbBinSum, BinSumLen),
+    map_binary_variables(Vars, Map, BinSumLen, []),
     map_solution_variables(Rest, Map).
 
-map_solution_variables([], []).
+map_solution_variables([], _).
+
+%TODO use is_list
+% current variable was mapped already - continue to the next one
+map_binary_variables([Var | RestVars], RestMap, MaxLength, AlreadyMapped) :-
+    member(Var = _, AlreadyMapped), 
+    map_binary_variables(RestVars, RestMap, MaxLength, AlreadyMapped).
 
 % current variable was not mapped already - map it!
-map_binary_variables([Var | RestVars], [Var = BitVector | RestMap], Lengeth, AlreadyMapped) :-
-    \member(Var = _, AlreadyMapped),
-    lengeth(BitVector, Lengeth),    % Length bits 
+map_binary_variables([Var | RestVars], [Var = BitVector | RestMap], MaxLength, AlreadyMapped) :-
+    \+ member(Var = _, AlreadyMapped),
+    length(BitVector, MaxLength),    % Length bits 
     append([Var = BitVector], AlreadyMapped, AlreadyMapped1),
-    map_binary_variables(RestVars, RestMap, Lengeth, AlreadyMapped1).
-
-% current variable was mapped already - continue to the next one
-map_binary_variables([Var | RestVars], [Var = _ | RestMap], Lengeth, AlreadyMapped) :-
-    member(Var = _, AlreadyMapped),
-    map_binary_variables(RestVars, RestMap, Lengeth, AlreadyMapped).
+    map_binary_variables(RestVars, RestMap, MaxLength, AlreadyMapped1).
 
 
-map_binary_variables([], [], _).
+
+map_binary_variables([], [], _, _).
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 % generate_sol_correctness_cnf(Instance+, Map+, CorrectnessCNF-)
@@ -393,18 +384,21 @@ bit_vector_to_int([-1 | Rest], CurrentIncrement, Num) :-
 
 bit_vector_to_int([], _, 0).
 
+kakuroDecode(Map, Map) :- 
+    kakuroDecodeFillSolution(Map).
 
-kakuroDecode([Var = BitVector | Rest], Solution) :-
+kakuroDecodeFillSolution([Var = BitVector | Rest]) :-
     bit_vector_to_int(BitVector, 1, Var),
-    kakuroDecode(Rest, Solution).
+    kakuroDecode(Rest).
 
-kakuroDecode([], []).
+kakuroDecodeFillSolution([]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Task 6 - TODO gal
 
-kakuroSolve(Instance,Solution) :-
+kakuroSolve(Instance,solution) :-
     kakuroEncode(Instance, Map, CNF),
     sat(CNF),
-    kakuroDecode(Map, Solution),
-    kakuroVerify(Solution).
+    solution = Instance,
+    kakuroDecode(Map, solution),
+    kakuroVerify(solution).
