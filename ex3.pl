@@ -108,49 +108,68 @@ mapVals([B|BinSumMinus], [X|LastVector]):-
     
     % sat(CNF).
 
-%addVectors (+,-)
-addVectors([_],[],[]).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% my implementation
 
-addVectors([X,Y], CNF, [Sum1|ResList]):-
-    length(X, N),
-    length(Y, M),
-    N > M, 
-    abs(N-M, Val),
-    length(Block, Val),
-    paddZero(Block),
-    append(Y,Block, NewY),  
-    add(X,NewY,-1,Sum1, CNF1), 
-    addVectors([Sum1], CNF2, ResList),
-    append(CNF1, CNF2, CNF).
+addVectors([Xs1, Xs2 | RestNumbers], Sum, CNF) :-
+    add_binary(Xs1, Xs2, CurrentSum, CNF_CurrentSum),
+    addVectors([CurrentSum | RestNumbers], Sum, RestAdditionCNF),
+    append(CNF_CurrentSum, RestAdditionCNF, CNF).
 
-addVectors([X,Y], CNF, [Sum1|ResList]):-
-    length(X, N),
-    length(Y, M),
-    N == M,   
-    add(X,Y,-1,Sum1, CNF1),
-    %writeln('Sum1 is' + Sum1),
-    addVectors([Sum1], CNF2, ResList),
-    append(CNF1, CNF2, CNF).
+addVectors([FinalSum], FinalSum, []).
 
-addVectors([X,Y|Numbers], CNF, ResList):-
-    length(X, N),
-    length(Y, M),
-    N > M, 
-    abs(N-M, Val),
-    length(Block, Val),
-    paddZero(Block),
-    append(Y,Block, NewY),  
-    add(X,NewY,-1,Sum1, CNF1),  
-    addVectors([Sum1|Numbers], CNF2, ResList),
-    append(CNF1, CNF2, CNF).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Yardens version for addVectors TODO merge with mine
+% %addVectors (+,-)
+% addVectors([_],[],[]).
 
-addVectors([X,Y|Numbers], CNF, ResList):-
-    length(X, N),
-    length(Y, M),
-    N==M,
-    add(X,Y,-1,Sum1,CNF1),
-    addVectors([Sum1|Numbers], CNF2, ResList),
-    append(CNF1, CNF2, CNF).
+% % last two vectors of different length
+% addVectors([X,Y], CNF, [Sum1|ResList]):-
+%     length(X, N),
+%     length(Y, M),
+%     N > M, 
+%     abs(N-M, Val),
+%     length(Block, Val),
+%     paddZero(Block),
+%     append(Y,Block, NewY),  
+%     add(X,NewY,-1,Sum1, CNF1), 
+%     addVectors([Sum1], CNF2, ResList),
+%     append(CNF1, CNF2, CNF).
+
+% % these are the last numbers and are of the same length
+% % possible when numbers contains only 2 numbers
+% addVectors([X,Y], CNF, [Sum1|ResList]):-
+%     length(X, N),
+%     length(Y, M),
+%     N == M,   
+%     add(X,Y,-1,Sum1, CNF1),
+%     %writeln('Sum1 is' + Sum1),
+%     addVectors([Sum1], CNF2, ResList),
+%     append(CNF1, CNF2, CNF).
+
+% % more than two numbers on the list
+% % the first two numbers are not in the same length
+% addVectors([X,Y|Numbers], CNF, ResList):-
+%     length(X, N),
+%     length(Y, M),
+%     N > M, 
+%     abs(N-M, Val),
+%     length(Block, Val),
+%     paddZero(Block),
+%     append(Y,Block, NewY),  
+%     add(X,NewY,-1,Sum1, CNF1),  
+%     addVectors([Sum1|Numbers], CNF2, ResList),
+%     append(CNF1, CNF2, CNF).
+
+% % more than two numbers on the list
+% % the first two numbers **are in the same length**
+% addVectors([X,Y|Numbers], CNF, ResList):-
+%     length(X, N),
+%     length(Y, M),
+%     N==M,
+%     add(X,Y,-1,Sum1,CNF1),
+%     addVectors([Sum1|Numbers], CNF2, ResList),
+%     append(CNF1, CNF2, CNF).
 
     
 % gets a list of variables and assigns -1 to all of the variables
@@ -159,14 +178,14 @@ paddZero([-1 | Rest]):-
     paddZero(Rest).
 
 
-% add(Xs+, Ys+, Zs-, CNF-)
+% add_binary(Xs+, Ys+, Zs-, CNF-)
 % wrapper for add(Xs+, Ys+, Cin+, Zs-, CNF-)
 add_binary([], [], [], []).
 
 add_binary(Xs, Ys, Zs, CNF) :-
     add_binary(Xs, Ys, -1, Zs, CNF).
 
-% add(Xs+, Ys+, Cin+, Zs-, CNF-)
+% add_binary(Xs+, Ys+, Cin+, Zs-, CNF-)
 % Xs and Ys are bit vectors
 % returns Zs the result, the carry in from the previous bits addition
 % can handle bitvectors on different length
