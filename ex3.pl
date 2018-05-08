@@ -79,18 +79,13 @@ fixDoubleMinusH(X, X):-
 /*task 1*/
 %sum_equals(+,+,-)
 sum_equals(Sum,Numbers,CNF):-
-    addVectors(Numbers, CNF, [LastVector]), !,   % ResList is the sum of Numbers in binary representaion, returned wrapped in list
-    writeln('Res List is' + LastVector),
-    % my_flatten(ResList, LastVector),
+    addVectors(Numbers, CNF, [LastVector]), !,  % ResList is the sum of Numbers in binary representaion, returned wrapped in list
+    writeln('Res List is' + LastVector),        % unwrapped the list without using myflatten
+    % my_flatten(ResList, LastVector),          % TODO gal make sure that RestList can only be bit vercor wrapped in a list
     dec2bin(Sum, BinSum),
-    reverse(BinSum, NewBinSum),
-    length(LastVector, N),
-    length(NewBinSum, M),
-    N > M,
-    abs(N-M, Val),
-    length(Block, Val),
-    paddZero(Block),
-    append(NewBinSum,Block, BinSumFinal),
+    reverse(BinSum, LsbBinSum),
+    setLastVectorValues(LsbBinSum, LastVector), % TODO gal what if len(LsbBinSum) > len(LastVector)? this will mean for sure that the CNF will fail
+    writeln('LastVector = ' + LastVector),
     zeroToMinusOne(BinSumFinal, BinSumMinus),
     writeln('CNF before'+CNF),
     writeln(''),
@@ -125,8 +120,6 @@ addVectors([X,Y], CNF, [Sum1|ResList]):-
     paddZero(Block),
     append(Y,Block, NewY),  
     add(X,NewY,-1,Sum1, CNF1), 
-    %writeln('Sum1 is' + Sum1),
- 
     addVectors([Sum1], CNF2, ResList),
     append(CNF1, CNF2, CNF).
 
@@ -211,6 +204,25 @@ fullAdder(X, Y, C, Sum, Carry, Cnf) :-
     [-X,-Y,C,-Sum,-Carry],
     [-X,-Y,-C,Sum,-Carry],
     [-X,-Y,-C,-Sum,Carry]].
+
+
+% setLastVectorValues(LsbBinSum+, LastVector+)
+% will set the values for the variables held in  LastVector
+% the extra bits not mentioned in LsbBinSum will be 0s
+% setLastVectorValues(LsbBinSum, LastVector) :-
+%     length(LsbBinSum, Len),
+%     length(LastVector, Len),
+%     LastVector = LsbBinSum.
+
+setLastVectorValues(LsbBinSum, LastVector) :-
+    length(LastVector, LastVectorLen),
+    length(LsbBinSum, LsbBinSumLen),
+    LastVectorLen >= LsbBinSumLen,
+    RequiredPaddingZeros is LastVectorLen - LsbBinSumLen,
+    length(PaddingBlock, RequiredPaddingZeros),
+    paddZero(PaddingBlock),
+    append(LsbBinSum, PaddingBlock, LastVector).
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Task 2 - all_diff(Numbers+, CNF-)
