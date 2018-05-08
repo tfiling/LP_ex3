@@ -153,66 +153,66 @@ addVectors([X,Y|Numbers], CNF, ResList):-
     append(CNF1, CNF2, CNF).
 
     
+% gets a list of variables and assigns -1 to all of the variables
 paddZero([]).    
-paddZero([0|Rest]):- 
+paddZero([-1 | Rest]):- 
     paddZero(Rest).
 
 
-% if_then_else(Condition, Action1, Action2) :- 
-%     Condition, !, Action1.  
-% if_then_else(Condition, Action1, Action2) :- 
-%     Action2.
+% add(Xs+, Ys+, Zs-, CNF-)
+% wrapper for add(Xs+, Ys+, Cin+, Zs-, CNF-)
+add_binary([], [], [], []).
 
-%we did in class, SUM of 2 Bit Vectors
-% add(+, +, -, -, -)
-add([], [], C, [C], []).
+add_binary(Xs, Ys, Zs, CNF) :-
+    add_binary(Xs, Ys, -1, Zs, CNF).
 
-add([X|Xs], [Y|Ys], C, [S|Sum], CNF):-       
-    fullAdder(X,Y,C,S,NextC, CNF1),
-    add(Xs, Ys, NextC, Sum, CNF2),
-    append(CNF1, CNF2, CNF).
+% add(Xs+, Ys+, Cin+, Zs-, CNF-)
+% Xs and Ys are bit vectors
+% returns Zs the result, the carry in from the previous bits addition
+% can handle bitvectors on different length
+add_binary([], [], Cin, [Cin], []).
 
-%we did in class, SUM of 2 Bits 
-%fullAdder(+,+,+,-,-, -)
-% fullAdder(I1, I2, C_in, S, C_out, CNF):-
-%     %calc Next C
-%     CNF = [[I1,I2,C_in,-S], [I1, I2, -C_in, S], [I1,-I2,C_in,S],[I1,-I2,-C_in,-S],
-%     [-S,I2,C_in,S], [-I1,I2,-C_in,-S],[-I1,-I2,C_in,-S],[-I1,-I2,-C_in,S]].
-%     %xor(I1, I2, X), 
-%     % and( I1, I2, A1), and( X, C_in, A2), or(A1, A2, C_out),
+add_binary([X | Xs], [Y | Ys], Cin, [Z | Zs], CNF) :-
+    fullAdder(X, Y, Cin, Z, Cout, CNF_bit),
+    add_binary(Xs, Ys, Cout, Zs, RestCNF),
+    append(CNF_bit, RestCNF, CNF).
+
+add_binary([X | Xs], [], Cin, [Z | Zs], CNF) :-
+    fullAdder(X, -1, Cin, Z, Cout, CNF_bit),
+    add_binary(Xs, [], Cout, Zs, RestCNF),
+    append(CNF_bit, RestCNF, CNF).
+
+add_binary([], [Y | Ys], Cin, [Z | Zs], CNF) :-
+    fullAdder(-1, Y, Cin, Z, Cout, CNF_bit),
+    add_binary([], Ys, Cout, Zs, RestCNF),
+    append(CNF_bit, RestCNF, CNF).
+
+
+% fullAdder(+,+,+,-,-, -)
+% introduced in the class, returns a S, C_out and CNF which will satisfy on correct bit addition
+ fullAdder(I1, I2, C_in, S, C_out, CNF):-
+    CNF_S = [   % CNF that satisfies when S will hold the correct value
+        [I1,I2,C_in,-S], 
+        [I1, I2, -C_in, S], 
+        [I1,-I2,C_in,S],
+        [I1,-I2,-C_in,-S],
+        [-S,I2,C_in,S], 
+        [-I1,I2,-C_in,-S],
+        [-I1,-I2,C_in,-S],
+        [-I1,-I2,-C_in,S]
+        ],
+    CNF_Cout = [
+        [I1, I2, Cin, -C_out],
+        [I1, I2, -Cin, -C_out],
+        [I1, -I2, Cin, -C_out],
+        [I1, -I2, -Cin, C_out],
+        [-I1, I2, Cin, -C_out],
+        [-I1, I2, -Cin, C_out],
+        [-I1, -I2, Cin, C_out],
+        [-I1, -I2, -Cin, C_out]
+    ],
+    append(CNF_S, CNF_Cout, CNF).
     
-fullAdder(X, Y, C, Sum, Carry, Cnf) :-
-    Cnf = [[X,Y,C,Sum,Carry],
-    [X,Y,C,Sum,-Carry],
-    [X,Y,C,-Sum,Carry],
-    [X,Y,C,-Sum,-Carry],
-    [X,Y,-C,Sum,Carry],
-    [X,Y,-C,Sum,-Carry],
-    [X,Y,-C,-Sum,-Carry],
-    [X,-Y,C,Sum,Carry],
-    [X,-Y,C,Sum,-Carry],
-    [X,-Y,C,-Sum,-Carry],
-    [X,-Y,-C,Sum,Carry],
-    [X,-Y,-C,-Sum,Carry],
-    [X,-Y,-C,-Sum,-Carry],
-    [-X,Y,C,Sum,Carry],
-    [-X,Y,C,Sum,-Carry],
-    [-X,Y,C,-Sum,-Carry],
-    [-X,Y,-C,Sum,Carry],
-    [-X,Y,-C,-Sum,-Carry],
-    [-X,-Y,C,Sum,Carry],
-    [-X,-Y,C,-Sum,-Carry],
-    [-X,-Y,-C,Sum,-Carry],
-    [-X,-Y,-C,-Sum,Carry]].
-
-
-% setLastVectorValues(LsbBinSum+, LastVector+)
-% will set the values for the variables held in  LastVector
-% the extra bits not mentioned in LsbBinSum will be 0s
-% setLastVectorValues(LsbBinSum, LastVector) :-
-%     length(LsbBinSum, Len),
-%     length(LastVector, Len),
-%     LastVector = LsbBinSum.
 
 setLastVectorValues(LsbBinSum, LastVector) :-
     length(LastVector, LastVectorLen),
