@@ -321,30 +321,27 @@ var_to_bitvector(Var, [Var2 = _ | RestVars], BitVector) :-  % first mapped varia
 % when decoding we will have values in the bit varialbes allowing us to assign the Var variable with number
 % the Var assignemnt will reflect in instance and therefor in the solution
 
-map_solution_variables([Sum = Vars | Rest], Map) :-
-    dec2bin(Sum, LsbBinSum),   % sum binary representation size indicates the max length of each variable
-    length(LsbBinSum, BinSumLen),
-    map_binary_variables(Vars, Map, BinSumLen, []),
-    map_solution_variables(Rest, Map).
+map_solution_variables(Instance, Map) :-
+    accumulateVars(Instance, Vars),
+    sort(Vars, VarsNoDuplicates),
+    map_binary_variables(VarsNoDuplicates, Map).
 
-map_solution_variables([], _).
+accumulateVars([_ = Vars | Rest], AllVars) :-
+    accumulateVars(Rest, AccumulatedVars),
+    append(Vars, AccumulatedVars, AllVars).
+
+accumulateVars([], []).
+
 
 %TODO use is_list
-% current variable was mapped already - continue to the next one
-map_binary_variables([Var | RestVars], RestMap, MaxLength, AlreadyMapped) :-
-    member(Var = _, AlreadyMapped), 
-    map_binary_variables(RestVars, RestMap, MaxLength, AlreadyMapped).
-
 % current variable was not mapped already - map it!
-map_binary_variables([Var | RestVars], [Var = BitVector | RestMap], MaxLength, AlreadyMapped) :-
-    \+ member(Var = _, AlreadyMapped),
-    length(BitVector, MaxLength),    % Length bits 
-    append([Var = BitVector], AlreadyMapped, AlreadyMapped1),
-    map_binary_variables(RestVars, RestMap, MaxLength, AlreadyMapped1).
+map_binary_variables([Var | RestVars], [Var = BitVector | RestMap]) :-
+    length(BitVector, 4),   % TODO make sure max value of var is 15 (according to Mike's note)
+    map_binary_variables(RestVars, RestMap).
 
 
 
-map_binary_variables([], [], _, _).
+map_binary_variables([], []).
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 % generate_sol_correctness_cnf(Instance+, Map+, CorrectnessCNF-)
@@ -384,7 +381,7 @@ bit_vector_to_int([-1 | Rest], CurrentIncrement, Num) :-
 
 bit_vector_to_int([], _, 0).
 
-kakuroDecode(Map, Map) :- 
+kakuroDecode(Map) :- 
     kakuroDecodeFillSolution(Map).
 
 kakuroDecodeFillSolution([Var = BitVector | Rest]) :-
