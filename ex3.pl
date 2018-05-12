@@ -200,24 +200,24 @@ add_binary([], [Y | Ys], Cin, [Z | Zs], CNF) :-
 % introduced in the class, returns a S, C_out and CNF which will satisfy on correct bit addition
  fullAdder(I1, I2, C_in, S, C_out, CNF):-
     CNF_S = [   % CNF that satisfies when S will hold the correct value
-        [I1,I2,C_in,-S], 
-        [I1, I2, -C_in, S], 
-        [I1,-I2,C_in,S],
-        [I1,-I2,-C_in,-S],
-        [-I1,I2,C_in,S], 
-        [-I1,I2,-C_in,-S],
-        [-I1,-I2,C_in,-S],
-        [-I1,-I2,-C_in,S]
+        [ I1, I2, C_in,-S], 
+        [ I1, I2,-C_in, S], 
+        [ I1,-I2, C_in, S],
+        [ I1,-I2,-C_in,-S],
+        [-I1, I2, C_in, S], 
+        [-I1, I2,-C_in,-S],
+        [-I1,-I2, C_in,-S],
+        [-I1,-I2,-C_in, S]
         ],
     CNF_Cout = [
-        [I1, I2, Cin, -C_out],
-        [I1, I2, -Cin, -C_out],
-        [I1, -I2, Cin, -C_out],
-        [I1, -I2, -Cin, C_out],
-        [-I1, I2, Cin, -C_out],
-        [-I1, I2, -Cin, C_out],
-        [-I1, -I2, Cin, C_out],
-        [-I1, -I2, -Cin, C_out]
+        [ I1, I2, C_in,-C_out],
+        [ I1, I2,-C_in,-C_out],
+        [ I1,-I2, C_in,-C_out],
+        [ I1,-I2,-C_in, C_out],
+        [-I1, I2, C_in,-C_out],
+        [-I1, I2,-C_in, C_out],
+        [-I1,-I2, C_in, C_out],
+        [-I1,-I2,-C_in, C_out]
     ],
     append(CNF_S, CNF_Cout, CNF).
     
