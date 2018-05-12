@@ -311,28 +311,31 @@ kakuroEncode(Instance, Map, CNF):-
     all_vars_smaller_than_10(Map, CNF3),    % force all numbers to be smaller than 10
     append([CNF1, CNF2, CNF3], CNF).        % all 3 combined are the proper CNF expression
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Task 5 - TODO 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Task 5 - kakuroDecode(Map+)
+%%% please note that we did not used the required signature kakuroDecode(Map,Solution), a complete explanation can be found in the attached PDF
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%
 % bit_vector_to_int(Vector+, CurrentIncrement+, Num-)
-
+% converts a binary number into an equivalent decimal number
 bit_vector_to_int([1 | Rest], CurrentIncrement, Num) :-
     NextIncrement is CurrentIncrement * 2,
     bit_vector_to_int(Rest, NextIncrement, Num1),
     Num is CurrentIncrement + Num1.
 
-% TODO gal - handle a scenario where we have ---1(unwrapping the -s)
 bit_vector_to_int([-1 | Rest], CurrentIncrement, Num) :-
     NextIncrement is CurrentIncrement * 2,
     bit_vector_to_int(Rest, NextIncrement, Num).
 
 bit_vector_to_int([], _, 0).
 
+% please note that we did not used the required signature kakuroDecode(Map,Solution).
+% A complete explanation can be found in the attached PDF.
+% kakuroDecode(Map+)
 kakuroDecode(Map) :- 
     kakuroDecodeFillSolution(Map).
 
+% kakuroDecodeFillSolution(Map+) - assignes decimal number into Var accoring to the assignment made by the sat solver
 kakuroDecodeFillSolution([Var = BitVector | Rest]) :-
     bit_vector_to_int(BitVector, 1, Var),
     kakuroDecode(Rest).
@@ -340,11 +343,13 @@ kakuroDecodeFillSolution([Var = BitVector | Rest]) :-
 kakuroDecodeFillSolution([]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Task 6 - TODO gal
+%%% Task 6 - kakuroSolve(Instance+,Solution-)
 
 kakuroSolve(Instance,Solution) :-
-    kakuroEncode(Instance, Map, CNF),
-    sat(CNF),
-    Solution = Instance,
-    kakuroDecode(Map),
-    kakuroVerify(Solution).
+    kakuroEncode(Instance, Map, CNF),   % incode the instance
+    sat(CNF),                           % solve the CNF using the sat solver
+    Solution = Instance,                % assign Solution to be Instance whre the variables are still unknown
+    kakuroDecode(Map),                  % decode the solution stored in Map in the form of [... | Var_i = [B_i0, B_i1, B_i2, B_i3] | ....]
+                                        % each Var is identical to the one in Solution and Instance.
+                                        % assigning them will automatically fill Solution with the resulted solution
+    kakuroVerify(Solution).             % validate the solution
