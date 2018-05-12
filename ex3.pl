@@ -1,32 +1,11 @@
 user:file_search_path(sat, '../satsolver').
 :- use_module(sat(satsolver)).
-% :- use_module(naive_sat).
-/* helper funcs */
-and(A,B) :- A,B.
-or(A,B) :- A;B.
-nand(A,B) :- not(and(A,B)).
-nor(A,B) :- not(or(A,B)).
-xor(A,B) :- or(A,B), nand(A,B).
-% TODO remove all below boolean opeartions
-% currently used to calculate the carry but probably not used properly
-% in the class the TA will explain how to calculate the carry in add(Sum, Numbers, CNF)
-or( 0, 0, 0).
-or( 0, 1, 1).
-or( 1, 0, 1).
-or( 1, 1, 1).
 
-xor( 0, 0, 0).
-xor( 0, 1, 1).
-xor( 1, 0, 1).
-xor( 1, 1, 0).
-
-and( 0, 0, 0).
-and( 0, 1, 0).
-and( 1, 0, 0).
-and( 1, 1, 1).
-
+% dec2bin(Decimal+,BinaryRepresentation-) - converts decimal numbers into their binary representation
 dec2bin(0,[0]).
+
 dec2bin(1,[1]).
+
 dec2bin(N,L):- 
     N > 1,
     X is N mod 2,
@@ -34,49 +13,16 @@ dec2bin(N,L):-
     dec2bin(Y,L1),
     L = [X|L1].
 
-my_flatten([], []).
-my_flatten([A|B],L) :- 
-    my_flatten(B,B1), !, 
-    append(A,B1,L).
-my_flatten([A|B],[A|B1]) :- 
-    my_flatten(B,B1).
-
+% zeroToMinusOne(OriginalBinary+, ConvertedRepresentation-)
+% converts binary representation of {0, 1} into binary representation of {-1, 1} 
 zeroToMinusOne([], []).
+
 zeroToMinusOne([0|Rest], [-1|RestNew]):-
         zeroToMinusOne(Rest, RestNew).
+
 zeroToMinusOne([1|Rest], [1|RestNew]):-
         zeroToMinusOne(Rest, RestNew).
-zeroToMinusOne([-1|Rest], [-1|RestNew]):-
-        zeroToMinusOne(Rest, RestNew).
-
-fixDoubleMinus([],[]).
-fixDoubleMinus([List | RestCNF], [NewCNF | RestNewCNF]):-
-    fixDoubleMinusH2(List, NewCNF),
-    fixDoubleMinus(RestCNF, RestNewCNF).
-
-fixDoubleMinusH2([H | RestCNF], [NewH | RestNewCNF]) :-
-    fixDoubleMinusH(H, NewH),
-    fixDoubleMinusH2(RestCNF, RestNewCNF).
-fixDoubleMinusH2([], []).
-
-fixDoubleMinusH(- -1, 1):- !.
-fixDoubleMinusH(- -X1, X) :-
-    nonvar(X1),
-    fixDoubleMinusH(X1, X).
-fixDoubleMinusH(-1, -1):- !.
-fixDoubleMinusH(- -X1, X):- 
-    var(X1),
-    fixDoubleMinusH(X1, X).
-fixDoubleMinusH(-X, -X):-
-    var(X),
-    !.
-
-fixDoubleMinusH(X, X):-
-    var(X),
-    !,
-    fixDoubleMinusH(CNF, NewCNF).
-
-/* Part A */
+        
 
 /*task 1*/
 %sum_equals(+,+,-)
