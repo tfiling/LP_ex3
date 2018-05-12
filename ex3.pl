@@ -1,6 +1,19 @@
 user:file_search_path(sat, '../satsolver').
 :- use_module(sat(satsolver)).
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Task 1 - sum_equals(Sum+,Numbers+,CNF-)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%sum_equals(+,+,-)
+sum_equals(Sum,Numbers,CNF):-
+    addVectors(Numbers, SumVaribles, CNF),      % SumVaribles is the variable list(bit vector) that will be set with the actual sum bits
+    dec2bin(Sum, LsbBinSum),    % converts Sum into binary Lsbit first representation
+    zeroToMinusOne(LsbBinSum, LsbBinSumMinus),  % LsbBinSumMinus is LsbBinSum where all 0s were converted to -1
+    setLastVectorValues(LsbBinSumMinus, SumVaribles).   % sets all bit variables in SumVaribles according to the values in LsbBinSumMinus
+                                                        % pads the MSbits with -1s (0s)
+
+
 % dec2bin(Decimal+,BinaryRepresentation-) - converts decimal numbers into their binary representation
 dec2bin(0,[0]).
 
@@ -24,90 +37,18 @@ zeroToMinusOne([1|Rest], [1|RestNew]):-
         zeroToMinusOne(Rest, RestNew).
         
 
-/*task 1*/
-%sum_equals(+,+,-)
-sum_equals(Sum,Numbers,CNF):-
-    addVectors(Numbers, SumVaribles, CNF),      % SumVaribles is the variable list(bit vector) that will be set with the actual sum bits
-    dec2bin(Sum, LsbBinSum),    % converts Sum into binary Lsbit first representation
-    zeroToMinusOne(LsbBinSum, LsbBinSumMinus),  % LsbBinSumMinus is LsbBinSum where all 0s were converted to -1
-    setLastVectorValues(LsbBinSumMinus, SumVaribles).   % sets all bit variables in SumVaribles according to the values in LsbBinSumMinus
-                                                        % pads the MSbits with -1s (0s)
-    
-
-mapVals([],[]).
-mapVals([B|BinSumMinus], [X|LastVector]):-
-    X = B,
-    mapVals(BinSumMinus, LastVector).
-   
-
-    
-    % sat(CNF).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% my implementation
-
+% addVectors(Numbers+, Sum-, CNF-)
+% generates a CNF that will statisfy if and only if the numbers(list of numbers in binary representation)
+% sums into Sum(binary representation which is at this point is composed from variables)
 addVectors([Xs1, Xs2 | RestNumbers], Sum, CNF) :-
     add_binary(Xs1, Xs2, CurrentSum, CNF_CurrentSum),
     addVectors([CurrentSum | RestNumbers], Sum, RestAdditionCNF),
     append(CNF_CurrentSum, RestAdditionCNF, CNF).
 
 addVectors([FinalSum], FinalSum, []).
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Yardens version for addVectors TODO merge with mine
-% %addVectors (+,-)
-% addVectors([_],[],[]).
-
-% % last two vectors of different length
-% addVectors([X,Y], CNF, [Sum1|ResList]):-
-%     length(X, N),
-%     length(Y, M),
-%     N > M, 
-%     abs(N-M, Val),
-%     length(Block, Val),
-%     paddZero(Block),
-%     append(Y,Block, NewY),  
-%     add(X,NewY,-1,Sum1, CNF1), 
-%     addVectors([Sum1], CNF2, ResList),
-%     append(CNF1, CNF2, CNF).
-
-% % these are the last numbers and are of the same length
-% % possible when numbers contains only 2 numbers
-% addVectors([X,Y], CNF, [Sum1|ResList]):-
-%     length(X, N),
-%     length(Y, M),
-%     N == M,   
-%     add(X,Y,-1,Sum1, CNF1),
-%     %writeln('Sum1 is' + Sum1),
-%     addVectors([Sum1], CNF2, ResList),
-%     append(CNF1, CNF2, CNF).
-
-% % more than two numbers on the list
-% % the first two numbers are not in the same length
-% addVectors([X,Y|Numbers], CNF, ResList):-
-%     length(X, N),
-%     length(Y, M),
-%     N > M, 
-%     abs(N-M, Val),
-%     length(Block, Val),
-%     paddZero(Block),
-%     append(Y,Block, NewY),  
-%     add(X,NewY,-1,Sum1, CNF1),  
-%     addVectors([Sum1|Numbers], CNF2, ResList),
-%     append(CNF1, CNF2, CNF).
-
-% % more than two numbers on the list
-% % the first two numbers **are in the same length**
-% addVectors([X,Y|Numbers], CNF, ResList):-
-%     length(X, N),
-%     length(Y, M),
-%     N==M,
-%     add(X,Y,-1,Sum1,CNF1),
-%     addVectors([Sum1|Numbers], CNF2, ResList),
-%     append(CNF1, CNF2, CNF).
-
     
-% gets a list of variables and assigns -1 to all of the variables
+% paddZero(Block+) - set -1 into all of the variables. 
+% will not satisfy if one or more elements in the list is not variable
 paddZero([]).    
 paddZero([-1 | Rest]):- 
     paddZero(Rest).
@@ -115,32 +56,39 @@ paddZero([-1 | Rest]):-
 
 % add_binary(Xs+, Ys+, Zs-, CNF-)
 % wrapper for add(Xs+, Ys+, Cin+, Zs-, CNF-)
+% generates a CNF that will statisfy if and only if the Xs and Ys numbers(binary representation)
+% sums into Zs(binary representation)
 add_binary([], [], [], []).
 
 add_binary(Xs, Ys, Zs, CNF) :-
-    add_binary(Xs, Ys, -1, Zs, CNF).
+    add_binary(Xs, Ys, -1, Zs, CNF).    % invoke add_binary that will set a chain of fullAdders over Xs Ys
+                                        % initial carry in is -1 (0)
 
 % add_binary(Xs+, Ys+, Cin+, Zs-, CNF-)
-% Xs and Ys are bit vectors
-% returns Zs the result, the carry in from the previous bits addition
+% returns Zs the result and a CNF that will satify if and only if Xs and Ys are summed into Zs
+% Xs and Ys are binary representation of numbers, Cin is a carry if from the previous addition
 % can handle bitvectors on different length
-add_binary([], [], Cin, [Cin], []).
 
+% regular addition of two bits and a carry in
 add_binary([X | Xs], [Y | Ys], Cin, [Z | Zs], CNF) :-
     fullAdder(X, Y, Cin, Z, Cout, CNF_bit),
     add_binary(Xs, Ys, Cout, Zs, RestCNF),
     append(CNF_bit, RestCNF, CNF).
 
+% Xs has more bits than Ys, simply add X with -1 (0)
 add_binary([X | Xs], [], Cin, [Z | Zs], CNF) :-
     fullAdder(X, -1, Cin, Z, Cout, CNF_bit),
     add_binary(Xs, [], Cout, Zs, RestCNF),
     append(CNF_bit, RestCNF, CNF).
 
+% Ys has more bits than Xs, simply add Y with -1 (0)
 add_binary([], [Y | Ys], Cin, [Z | Zs], CNF) :-
     fullAdder(-1, Y, Cin, Z, Cout, CNF_bit),
     add_binary([], Ys, Cout, Zs, RestCNF),
     append(CNF_bit, RestCNF, CNF).
 
+% the last step of the addition where the carry out from the previous addition is set is the MSbit of the sum
+add_binary([], [], Cin, [Cin], []).
 
 % fullAdder(+,+,+,-,-, -)
 % introduced in the class, returns a S, C_out and CNF which will satisfy on correct bit addition
