@@ -250,15 +250,28 @@ diff(Xs,Ys,[[B]|CNF]):-
     diff(B, Xs, Ys, CNF).
 
 diff(B, [X], [Y], CNF):-
-        CNF = [[-B, -X, -Y], [-B, X, Y], [B, -X, Y], [B, X, -Y]].
+        CNF = [
+            [-B, X, Y], 
+            [-B, -X, -Y], 
+            [B, -X, Y], 
+            [B, X, -Y]
+            ].
 
 diff(B, [X | Xs], [Y | Ys], CNF):-
     % CNF1 = [[-B, -X, -Y, B1], [-B, X, Y, B1], [B, -X, Y], [B, X, -Y], [B, -B1]], % TODO gal - cosider using the origianl CNF
-    CNF1 = [[-B, -X, -Y, B1], [-B, X, Y, B1], [B, -X, Y], [B, X, -Y], [B, X, Y, -B1], [B, -X, -Y, -B1]],
+    CNF1 = [
+        [B, -X, Y], 
+        [B, X, -Y], 
+        [B, -X, -Y, -B1],
+        [B, X, Y, -B1], 
+        [-B, -X, -Y, B1], 
+        [-B, X, Y, B1] 
+        ],
     diff(B1, Xs, Ys, CNF2),
     append(CNF1, CNF2, CNF).
 
-diff(_, [], [], []).
+% diff(_, [], [], []). % TODO gal - validate this fix
+% generally the stopping case should be the last bit and not an empty list that can be accessed via the 2nd diff predicate
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
