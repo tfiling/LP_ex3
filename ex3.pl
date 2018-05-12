@@ -134,12 +134,14 @@ setLastVectorValues(LsbBinSum, SumVaribles) :-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Task 2 - all_diff(Numbers+, CNF-)
 
+% all_diff(Numbers+, CNF-)
 all_diff([X1, X2 | Rest], CNF) :-
-    diff(X1, X2, CNF1),
-    all_diff([X1 | Rest], CNF2),
-    all_diff([X2 | Rest], CNF3),
-    append([CNF1, CNF2, CNF3], CNF).
+    diff(X1, X2, CNF1),             % CNF1 will satisfy if and only if X1 is different from X2
+    all_diff([X1 | Rest], CNF2),    % CNF2 will satisfy if and only if X1 is different from the rest on the numbers
+    all_diff([X2 | Rest], CNF3),    % CNF3 will satisfy if and only if X2 is different from the rest on the numbers
+    append([CNF1, CNF2, CNF3], CNF).    % all 3 should be satisfied!
 
+% a single number or an empty list of numbers is a Vacuous truth
 all_diff([_], []).
 all_diff([], []).
 
@@ -149,6 +151,7 @@ diff(Xs,Ys,[[B]|CNF]):-
     diff(B, Xs, Ys, CNF).
 
 diff(B, [X], [Y], CNF):-
+% B <=> X != Y
         CNF = [
             [-B, X, Y], 
             [-B, -X, -Y], 
@@ -157,7 +160,7 @@ diff(B, [X], [Y], CNF):-
             ].
 
 diff(B, [X | Xs], [Y | Ys], CNF):-
-    % CNF1 = [[-B, -X, -Y, B1], [-B, X, Y, B1], [B, -X, Y], [B, X, -Y], [B, -B1]], % TODO gal - cosider using the origianl CNF
+% B <=> (X != Y) V B1(at least one of the next bits is not equal)
     CNF1 = [
         [B, -X, Y], 
         [B, X, -Y], 
@@ -168,9 +171,6 @@ diff(B, [X | Xs], [Y | Ys], CNF):-
         ],
     diff(B1, Xs, Ys, CNF2),
     append(CNF1, CNF2, CNF).
-
-% diff(_, [], [], []). % TODO gal - validate this fix
-% generally the stopping case should be the last bit and not an empty list that can be accessed via the 2nd diff predicate
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
