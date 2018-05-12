@@ -93,7 +93,8 @@ add_binary([], [], Cin, [Cin], []).
 % fullAdder(+,+,+,-,-, -)
 % introduced in the class, returns a S, C_out and CNF which will satisfy on correct bit addition
  fullAdder(I1, I2, C_in, S, C_out, CNF):-
-    CNF_S = [   % CNF that satisfies when S will hold the correct value
+% CNF_S: s <=> I1 Xor I2 Xor C_in
+    CNF_S = [   % a CNF that satisfies when S will hold the correct value
         [ I1, I2, C_in,-S], 
         [ I1, I2,-C_in, S], 
         [ I1,-I2, C_in, S],
@@ -103,7 +104,8 @@ add_binary([], [], Cin, [Cin], []).
         [-I1,-I2, C_in,-S],
         [-I1,-I2,-C_in, S]
         ],
-    CNF_Cout = [
+% CNF_Cout C_out <=> (I1 ^ I2) V (I1 ^ C_in) V (I2 ^ C_in)
+    CNF_Cout = [    % a CNF that satisfies when C_out will hold the correct value
         [ I1, I2, C_in,-C_out],
         [ I1, I2,-C_in,-C_out],
         [ I1,-I2, C_in,-C_out],
