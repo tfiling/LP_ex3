@@ -320,13 +320,14 @@ var_list_to_bitvector_list([Var | RestVars], Map, [BitVector | RestBitVectors]) 
 var_list_to_bitvector_list([], _, []).
 
 % var_to_bitvector(Var+, Map+, BitVector-) - finds Var in Map and returns it's bitvector.
-var_to_bitvector(Var, [Var = BitVector | _], BitVector).    % found Var, stop looking
-
 var_to_bitvector(Var, [Var2 = _ | RestVars], BitVector) :-  % first mapped variable is not the one we are looking for, keep looking
-    Var \= Var2,
+    Var \== Var2,
     var_to_bitvector(Var, RestVars, BitVector).
 
-% no need for halt predicate, we expect it to fail if Var is not mapped
+var_to_bitvector(Var, [Var = BitVector | _], BitVector).    % found Var, stop looking
+
+
+% no need for halt / base case predicate, we expect it to fail if Var is not mapped
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 % map_solution_variables(Instance+, Map-)
@@ -406,9 +407,9 @@ kakuroDecodeFillSolution([]).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Task 6 - TODO gal
 
-kakuroSolve(Instance,solution) :-
+kakuroSolve(Instance,Solution) :-
     kakuroEncode(Instance, Map, CNF),
     sat(CNF),
-    solution = Instance,
-    kakuroDecode(Map, solution),
-    kakuroVerify(solution).
+    Solution = Instance,
+    kakuroDecode(Map),
+    kakuroVerify(Solution).
