@@ -115,15 +115,18 @@ add_binary([], [], Cin, [Cin], []).
     ],
     append(CNF_S, CNF_Cout, CNF).
     
-
+% setLastVectorValues(LsbBinSum+, SumVaribles+)
+% applies values of LsbBinSum into SumVaribles which is a list of variables and padds the MSbits with -1 (0)
 setLastVectorValues(LsbBinSum, SumVaribles) :-
     length(SumVaribles, SumVariblesLen),
     length(LsbBinSum, LsbBinSumLen),
-    SumVariblesLen >= LsbBinSumLen,
+    SumVariblesLen >= LsbBinSumLen,     % should not satisfy if LsbBinSum is longer SumVaribles
+                                        % if its not longer then it is impossible that the argumented sum 
+                                        % can be reached with the given amount of numbers
     RequiredPaddingZeros is SumVariblesLen - LsbBinSumLen,
     length(PaddingBlock, RequiredPaddingZeros),
     paddZero(PaddingBlock),
-    append(LsbBinSum, PaddingBlock, SumVaribles).
+    append(LsbBinSum, PaddingBlock, SumVaribles).   % LsbBinSum values are appended into -1s padding "creating" SumVaribles.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
