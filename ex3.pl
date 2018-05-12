@@ -133,6 +133,7 @@ setLastVectorValues(LsbBinSum, SumVaribles) :-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Task 2 - all_diff(Numbers+, CNF-)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % all_diff(Numbers+, CNF-)
 all_diff([X1, X2 | Rest], CNF) :-
@@ -179,39 +180,44 @@ diff(B, [X | Xs], [Y | Ys], CNF):-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Task 3
+%%% Task 3 - kakuroVerify(Solution+)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% kakuroVerify(Solution+)
  kakuroVerify([H | Rest]) :-
     verify_assignment(H),
     kakuroVerify(Rest).
 
 kakuroVerify([]).
 
+% verify_assignment(Sum+ = Assignments+) - satisfies if and only if the anumbers assigned fit kakuro rules
 verify_assignment(Sum = Assignments) :-
     is_sum(Sum, Assignments),
     all_numbers_diff(Assignments).
 
+% is_sum(Sum+, Numbers+) - satisfies if and only if the sum of Numbers is Sum
 is_sum(Sum, [H | T]) :-
     Sum1 is Sum - H,
     is_sum(Sum1, T).
 
+% all numbers were substracted from Sum and 0 is remaining -> sum of all given numbers is Sum
 is_sum(0, []).
 
+% all_numbers_diff(Numbers+) - satisfies if and only if all numbers are distinct
 all_numbers_diff([X1, X2 | Rest]) :-
-    X1 \= X2,
-    all_numbers_diff([X1 | Rest]),
-    all_numbers_diff([X2 | Rest]).
+    X1 \== X2,                      % X1 is different than X2
+    all_numbers_diff([X1 | Rest]),  % X1 is different than the rest of the numbers
+    all_numbers_diff([X2 | Rest]).  % X2 is different than the rest of the numbers
 
 all_numbers_diff([_]).
 all_numbers_diff([]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Task 4 - TODO GAL
-
-%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Utils
+%%% Task 4 - kakuroEncode(Instance+,Map-,CNF-)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % var_list_to_bitvector_list(Vars+, Map+, BitVectors-)
+% returns with BitVectors the binary representation of all Vars according to Map (the mapping of the encoding)
 var_list_to_bitvector_list([Var | RestVars], Map, [BitVector | RestBitVectors]) :-
     var_to_bitvector(Var, Map, BitVector),
     var_list_to_bitvector_list(RestVars, Map, RestBitVectors).
@@ -219,16 +225,19 @@ var_list_to_bitvector_list([Var | RestVars], Map, [BitVector | RestBitVectors]) 
 var_list_to_bitvector_list([], _, []).
 
 % var_to_bitvector(Var+, Map+, BitVector-) - finds Var in Map and returns it's bitvector.
-var_to_bitvector(Var, [Var2 = _ | RestVars], BitVector) :-  % first mapped variable is not the one we are looking for, keep looking
+% first mapped variable is not the one we are looking for, keep looking
+var_to_bitvector(Var, [Var2 = _ | RestVars], BitVector) :-  
     Var \== Var2,
     var_to_bitvector(Var, RestVars, BitVector).
 
-var_to_bitvector(Var, [Var = BitVector | _], BitVector).    % found Var, stop looking
-
+% found Var and its representation in Map, stop looking
+var_to_bitvector(Var, [Var = BitVector | _], BitVector).    
 
 % no need for halt / base case predicate, we expect it to fail if Var is not mapped
+% any Var mentioned in the instance should be present in Map
 
-%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % map_solution_variables(Instance+, Map-)
 % maps each variable in Vars into binary representatin in the form of Var = [Lsbit, Bit2, Bit4, ....]
 % when decoding we will have values in the bit varialbes allowing us to assign the Var variable with number
@@ -236,18 +245,19 @@ var_to_bitvector(Var, [Var = BitVector | _], BitVector).    % found Var, stop lo
 
 map_solution_variables(Instance, Map) :-
     accumulateVars(Instance, Vars),
-    sort(Vars, VarsNoDuplicates),
+    sort(Vars, VarsNoDuplicates),   % handle duplicated appearances of Vars
     map_binary_variables(VarsNoDuplicates, Map).
 
+% accumulateVars(Instance+, AllVars+)
+% appends all variables mentioned in the Instance (may contain duplicates)
 accumulateVars([_ = Vars | Rest], AllVars) :-
     accumulateVars(Rest, AccumulatedVars),
     append(Vars, AccumulatedVars, AllVars).
 
 accumulateVars([], []).
 
-
-%TODO use is_list
-% current variable was not mapped already - map it!
+% map_binary_variables(Vars+, Map-)
+% maps all variables in the form of Var = [Bit1, Bit2, Bit4, Bit8]
 map_binary_variables([Var | RestVars], [Var = BitVector | RestMap]) :-
     length(BitVector, 4),   % possible numbers are between 1 and 9 accoring to the instructions
     map_binary_variables(RestVars, RestMap).
@@ -256,29 +266,34 @@ map_binary_variables([Var | RestVars], [Var = BitVector | RestMap]) :-
 
 map_binary_variables([], []).
 
-%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % generate_sol_correctness_cnf(Instance+, Map+, CorrectnessCNF-)
 
+% generate_sol_correctness_cnf(Instance+, Map+, CorrectnessCNF-)
 generate_sol_correctness_cnf([Sum = Vars | Rest], Map, CorrectnessCNF) :-
-    var_list_to_bitvector_list(Vars, Map, BitVectors),
-    sum_equals(Sum, BitVectors, CNF1),
-    all_diff(BitVectors, CNF2),
-    generate_sol_correctness_cnf(Rest, Map, RestCNF),
-    append([CNF1, CNF2, RestCNF], CorrectnessCNF).
+    var_list_to_bitvector_list(Vars, Map, BitVectors),  % extract current relevant variables(binary representation)
+    sum_equals(Sum, BitVectors, CNF1),                  % CNF1 satisfies when Vars sum into Sum
+    all_diff(BitVectors, CNF2),                         % CNF2 satisfies when Vars are distinct from each other
+    generate_sol_correctness_cnf(Rest, Map, RestCNF),   % generate the CNF for the rest of instance assignments
+    append([CNF1, CNF2, RestCNF], CorrectnessCNF).      % append all 3 CNFs
 
 generate_sol_correctness_cnf([], _, []).
 
 
-%%%%%%%%%%%%%%%%%%%%%%%%
-
-% assuming all variables appear once
+% all_vars_greater_than_0(Map+, CNF-)
+% generate CNF that will satisfy if and only if all numbers mapped are greater than 0
+% we simply set the bits as a CNF OR component -> at least one bit is not -1 (0)
 all_vars_greater_than_0([_ = BitVector | Rest], CNF) :-
     all_vars_greater_than_0(Rest, RestVarsCNF),
     append([BitVector], RestVarsCNF, CNF).
 
 all_vars_greater_than_0([], []).
 
+% all_vars_smaller_than_10(Map+, CNF-)
+% generate CNF that will satisfy if and only if all numbers mapped are smaller than 10
+% if X3 is 1 then X2 and X3 must be -1 (0)
 all_vars_smaller_than_10([Var = [X0, X1, X2, X3] | Rest], CNF) :-
+% {X3 => !X1 ^ !X2} <=> {!X3 V (!X1 ^ !X2)}
     CurrentVarCNF = [
         [-X1, -X3],
         [-X2, -X3]
@@ -290,11 +305,11 @@ all_vars_smaller_than_10([], []).
 
 
 kakuroEncode(Instance, Map, CNF):-
-    map_solution_variables(Instance, Map),
-    generate_sol_correctness_cnf(Instance, Map, CNF1),
-    all_vars_greater_than_0(Map, CNF2),
-    all_vars_smaller_than_10(Map, CNF3),
-    append([CNF1, CNF2, CNF3], CNF).
+    map_solution_variables(Instance, Map),  % map instance
+    generate_sol_correctness_cnf(Instance, Map, CNF1),  % generate general solution correctness CNF
+    all_vars_greater_than_0(Map, CNF2),     % force all numbers to be greater than 0
+    all_vars_smaller_than_10(Map, CNF3),    % force all numbers to be smaller than 10
+    append([CNF1, CNF2, CNF3], CNF).        % all 3 combined are the proper CNF expression
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Task 5 - TODO 
