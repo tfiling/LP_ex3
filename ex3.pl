@@ -350,7 +350,7 @@ accumulateVars([], []).
 %TODO use is_list
 % current variable was not mapped already - map it!
 map_binary_variables([Var | RestVars], [Var = BitVector | RestMap]) :-
-    length(BitVector, 4),   % TODO make sure max value of var is 15 (according to Mike's note)
+    length(BitVector, 4),   % possible numbers are between 1 and 9 accoring to the instructions
     map_binary_variables(RestVars, RestMap).
 
 
@@ -372,9 +372,30 @@ generate_sol_correctness_cnf([], _, []).
 
 %%%%%%%%%%%%%%%%%%%%%%%%
 
+% assuming all variables appear once
+all_vars_greater_than_0([_ = BitVector | Rest], CNF) :-
+    all_vars_greater_than_0(Rest, RestVarsCNF),
+    append([BitVector], RestVarsCNF, CNF).
+
+all_vars_greater_than_0([], []).
+
+all_vars_smaller_than_10([Var = [X0, X1, X2, X3] | Rest], CNF) :-
+    CurrentVarCNF = [
+        [-X1, -X3],
+        [-X2, -X3]
+    ],
+    all_vars_smaller_than_10(Rest, RestCNF),
+    append(CurrentVarCNF, RestCNF, CNF).
+
+all_vars_smaller_than_10([], []).
+
+
 kakuroEncode(Instance, Map, CNF):-
     map_solution_variables(Instance, Map),
-    generate_sol_correctness_cnf(Instance, Map, CNF).
+    generate_sol_correctness_cnf(Instance, Map, CNF1),
+    all_vars_greater_than_0(Map, CNF2),
+    all_vars_smaller_than_10(Map, CNF3),
+    append([CNF1, CNF2, CNF3], CNF).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Task 5 - TODO 
