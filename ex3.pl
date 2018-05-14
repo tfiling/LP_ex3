@@ -238,15 +238,16 @@ var_to_bitvector(Var, [Var = BitVector | _], BitVector).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% map_solution_variables(Instance+, Map-)
-% maps each variable in Vars into binary representatin in the form of Var = [Lsbit, Bit2, Bit4, ....]
+% map_solution_variables(Instance+, VarsMap-)
+% Map is built in the form of [Instance, VarsMap] and this predicate receives the VarsMap part of the Map
+% VarsMap maps each variable into binary representatin in the form of Var = [Bit1, Bit2, Bit4, Bit8]
 % when decoding we will have values in the bit varialbes allowing us to assign the Var variable with number
 % the Var assignemnt will reflect in instance and therefor in the solution
 
-map_solution_variables(Instance, Map) :-
+map_solution_variables(Instance, VarsMap) :-
     accumulateVars(Instance, Vars),
     sort(Vars, VarsNoDuplicates),   % handle duplicated appearances of Vars
-    map_binary_variables(VarsNoDuplicates, Map).
+    map_binary_variables(VarsNoDuplicates, VarsMap).
 
 % accumulateVars(Instance+, AllVars+)
 % appends all variables mentioned in the Instance (may contain duplicates)
@@ -292,7 +293,7 @@ all_vars_greater_than_0([], []).
 % all_vars_smaller_than_10(Map+, CNF-)
 % generate CNF that will satisfy if and only if all numbers mapped are smaller than 10
 % if X3 is 1 then X2 and X3 must be -1 (0)
-all_vars_smaller_than_10([Var = [X0, X1, X2, X3] | Rest], CNF) :-
+all_vars_smaller_than_10([_ = [_, X1, X2, X3] | Rest], CNF) :-
 % {X3 => !X1 ^ !X2} <=> {!X3 V (!X1 ^ !X2)}
     CurrentVarCNF = [
         [-X1, -X3],
@@ -304,16 +305,15 @@ all_vars_smaller_than_10([Var = [X0, X1, X2, X3] | Rest], CNF) :-
 all_vars_smaller_than_10([], []).
 
 
-kakuroEncode(Instance, Map, CNF):-
-    map_solution_variables(Instance, Map),  % map instance
-    generate_sol_correctness_cnf(Instance, Map, CNF1),  % generate general solution correctness CNF
-    all_vars_greater_than_0(Map, CNF2),     % force all numbers to be greater than 0
-    all_vars_smaller_than_10(Map, CNF3),    % force all numbers to be smaller than 10
+kakuroEncode(Instance, [Instance, VarsMap], CNF):-
+    map_solution_variables(Instance, VarsMap),  % map instance
+    generate_sol_correctness_cnf(Instance, VarsMap, CNF1),  % generate general solution correctness CNF
+    all_vars_greater_than_0(VarsMap, CNF2),     % force all numbers to be greater than 0
+    all_vars_smaller_than_10(VarsMap, CNF3),    % force all numbers to be smaller than 10
     append([CNF1, CNF2, CNF3], CNF).        % all 3 combined are the proper CNF expression
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Task 5 - kakuroDecode(Map+)
-%%% please note that we did not used the required signature kakuroDecode(Map,Solution), a complete explanation can be found in the attached PDF
+%%% Task 5 - kakuroDecode(Map+, Solution-)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % bit_vector_to_int(Vector+, CurrentIncrement+, Num-)
@@ -329,16 +329,14 @@ bit_vector_to_int([-1 | Rest], CurrentIncrement, Num) :-
 
 bit_vector_to_int([], _, 0).
 
-% please note that we did not used the required signature kakuroDecode(Map,Solution).
-% A complete explanation can be found in the attached PDF.
-% kakuroDecode(Map+)
-kakuroDecode(Map) :- 
-    kakuroDecodeFillSolution(Map).
+% kakuroDecode(Map+, Solution-)
+kakuroDecode([Solution, VarsMap], Solution) :- 
+    kakuroDecodeFillSolution(VarsMap).
 
 % kakuroDecodeFillSolution(Map+) - assignes decimal number into Var accoring to the assignment made by the sat solver
 kakuroDecodeFillSolution([Var = BitVector | Rest]) :-
     bit_vector_to_int(BitVector, 1, Var),
-    kakuroDecode(Rest).
+    kakuroDecodeFillSolution(Rest).
 
 kakuroDecodeFillSolution([]).
 
@@ -348,8 +346,7 @@ kakuroDecodeFillSolution([]).
 kakuroSolve(Instance,Solution) :-
     kakuroEncode(Instance, Map, CNF),   % incode the instance
     sat(CNF),                           % solve the CNF using the sat solver
-    Solution = Instance,                % assign Solution to be Instance whre the variables are still unknown
-    kakuroDecode(Map),                  % decode the solution stored in Map in the form of [... | Var_i = [B_i0, B_i1, B_i2, B_i3] | ....]
+    kakuroDecode(Map, Solution),        % decode the solution stored in Map in the form of [... | Var_i = [B_i0, B_i1, B_i2, B_i3] | ....]
                                         % each Var is identical to the one in Solution and Instance.
                                         % assigning them will automatically fill Solution with the resulted solution
     kakuroVerify(Solution).             % validate the solution
